@@ -29,6 +29,9 @@ import { toast } from 'sonner';
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required'),
+  dropType: z.enum(['BELLWORK_EXIT_TICKETS', 'KNOWLEDGE_CHECK_QUIZ', 'SCAFFOLDED_LESSON', 'VIDEO_BASED_INSTRUCTION', 'PROJECT_BASED_LEARNING', 'FORMATIVE_ASSESSMENT'], {
+    required_error: 'Please select a drop type',
+  }),
   scheduleDate: z.date({
     required_error: 'Schedule date is required',
   }),
@@ -45,7 +48,6 @@ const formSchema = z.object({
   rewardItem: z.string().optional(),
   numberOfWinners: z.number().min(1, 'Number of winners must be at least 1'),
   eligibilityCriteria: z.string().min(1, 'Eligibility criteria is required'),
-  dropType: z.string().optional(),
   subject: z.string().optional(),
   rtiTier: z.string().optional(),
   learningGoal: z.string().optional(),
@@ -168,6 +170,7 @@ export const CreateDropForm: React.FC<CreateDropFormProps> = ({ onDropCreated })
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
+      dropType: undefined,
       scheduleDate: undefined,
       scheduleTime: '',
       videoContent: '',
@@ -178,7 +181,6 @@ export const CreateDropForm: React.FC<CreateDropFormProps> = ({ onDropCreated })
       rewardType: 'tokens',
       numberOfWinners: 1,
       eligibilityCriteria: '',
-      dropType: '',
       subject: '',
       rtiTier: '',
       learningGoal: '',
@@ -229,7 +231,7 @@ export const CreateDropForm: React.FC<CreateDropFormProps> = ({ onDropCreated })
       // Map form data to API format
       const dropPayload = {
         title: data.title,
-        dropType: data.template.toUpperCase(),
+        dropType: data.dropType,
         topicId: data.subject,
         rtiTier: data.rtiTier?.toUpperCase(),
         learningGoal: data.learningGoal,
@@ -322,6 +324,33 @@ export const CreateDropForm: React.FC<CreateDropFormProps> = ({ onDropCreated })
                 <FormControl>
                   <Input placeholder="Enter drop title" {...field} />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Drop Type */}
+          <FormField
+            control={form.control}
+            name="dropType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Drop Type</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select drop type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="BELLWORK_EXIT_TICKETS">📝 Bellwork & Exit Tickets</SelectItem>
+                    <SelectItem value="KNOWLEDGE_CHECK_QUIZ">🧠 Knowledge Check Quiz</SelectItem>
+                    <SelectItem value="SCAFFOLDED_LESSON">📚 Scaffolded Lesson</SelectItem>
+                    <SelectItem value="VIDEO_BASED_INSTRUCTION">🎬 Video-based Instruction</SelectItem>
+                    <SelectItem value="PROJECT_BASED_LEARNING">🔬 Project-based Learning</SelectItem>
+                    <SelectItem value="FORMATIVE_ASSESSMENT">📊 Formative Assessment</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
