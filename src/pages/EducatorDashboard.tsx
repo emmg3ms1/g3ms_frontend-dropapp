@@ -1,0 +1,590 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { CreateDropForm } from '@/components/CreateDropForm';
+import { InviteStudentsStep } from '@/components/InviteStudentsStep';
+import { 
+  Plus, 
+  Users, 
+  BookOpen, 
+  Trophy, 
+  Sparkles,
+  CheckCircle,
+  ArrowRight,
+  PlayCircle,
+  Target,
+  Lightbulb,
+  Rocket,
+  Heart,
+  User,
+  Settings,
+  CreditCard,
+  LogOut,
+  Coins,
+  BarChart3,
+  UsersIcon,
+  Calendar
+} from 'lucide-react';
+
+const EducatorDashboard = () => {
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showInviteStudents, setShowInviteStudents] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [hasCreatedDrop, setHasCreatedDrop] = useState(false);
+  const [dropTitle, setDropTitle] = useState('');
+  const navigate = useNavigate();
+
+  const handleDropCreated = (title: string) => {
+    setDropTitle(title);
+    setHasCreatedDrop(true);
+    setCurrentStep(2);
+    setShowCreateForm(false);
+    // Auto-open invite students after creating drop
+    setTimeout(() => setShowInviteStudents(true), 500);
+  };
+
+  // Mock user data - replace with real data
+  const user = {
+    name: "accounting",
+    role: "Educator",
+    school: "School",
+    tokens: 0,
+    tokensNeeded: 15000,
+    giftCardValue: 15000
+  };
+
+  const gettingStartedSteps = [
+    {
+      id: 1,
+      title: "Create Your First Drop",
+      description: "Design an engaging educational challenge",
+      icon: Plus,
+      completed: currentStep > 1,
+      primary: currentStep === 1
+    },
+    {
+      id: 2,
+      title: "Invite Students",
+      description: "Share your drop with your classroom",
+      icon: Users,
+      completed: currentStep > 2,
+      primary: currentStep === 2
+    },
+    {
+      id: 3,
+      title: "Monitor Progress",
+      description: "Track student engagement and completion",
+      icon: Target,
+      completed: currentStep > 3,
+      primary: currentStep === 3
+    },
+    {
+      id: 4,
+      title: "Celebrate Success",
+      description: "Review results and celebrate achievements",
+      icon: Trophy,
+      completed: currentStep > 4,
+      primary: currentStep === 4
+    }
+  ];
+
+  const dropIdeas = [
+    {
+      title: "Math Challenge Quest",
+      description: "Interactive problem-solving adventure",
+      category: "Math & Logic",
+      time: "15-20 min",
+      difficulty: "Beginner"
+    },
+    {
+      title: "Code Your First App",
+      description: "Build a simple calculator or game",
+      category: "Code Creation", 
+      time: "25-30 min",
+      difficulty: "Intermediate"
+    },
+    {
+      title: "Science Discovery Lab",
+      description: "Virtual experiments and observations",
+      category: "Science & Curiosity",
+      time: "20-25 min", 
+      difficulty: "Beginner"
+    },
+    {
+      title: "Creative Writing Workshop",
+      description: "Story prompts and character development",
+      category: "Reading & Writing",
+      time: "30-35 min",
+      difficulty: "All Levels"
+    }
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-g3ms-purple/5 to-g3ms-green/5">
+      {/* Top Navigation */}
+      <div className="border-b bg-white">
+        <div className="max-w-7xl mx-auto px-6 py-3">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <div className="flex items-center">
+              <h1 className="text-xl font-bold text-gray-900">G3MS</h1>
+            </div>
+
+            {/* Tokens Display & Profile */}
+            <div className="flex items-center gap-4">
+              {/* Tokens Display */}
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-blue-500">
+                  ${user.tokensNeeded.toLocaleString()} tokens to go • ${user.giftCardValue.toLocaleString()} = Gift card
+                </span>
+                <div className="flex items-center gap-1">
+                  <Coins className="h-4 w-4 text-blue-500" />
+                  <span className="font-semibold">${user.tokens}</span>
+                </div>
+              </div>
+
+              {/* Profile Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2 p-2">
+                    <div className="text-right text-sm">
+                      <div className="font-medium">{user.name}</div>
+                      <div className="text-muted-foreground">{user.role} • {user.school}</div>
+                    </div>
+                    <Avatar className="h-8 w-8 bg-pink-500">
+                      <AvatarFallback className="bg-pink-500 text-white text-sm">
+                        {user.name.charAt(0).toLowerCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <User className="h-4 w-4 mr-2" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/settings')}>
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/billing')}>
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Billing
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="text-red-600" onClick={() => navigate('/login')}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Welcome Header */}
+      <div className="border-b bg-white/80 backdrop-blur-sm">
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <div className="text-center space-y-4">
+            <div className="flex items-center justify-center gap-2 text-g3ms-purple">
+              <Sparkles className="h-8 w-8" />
+              <h1 className="text-4xl font-bold">Welcome to G3MS Educator!</h1>
+            </div>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              You're about to create your first drop! Let's build an engaging learning experience that your students will love.
+            </p>
+            <div className="flex items-center justify-center gap-2 text-sm text-g3ms-green font-medium">
+              <CheckCircle className="h-4 w-4" />
+              <span>Account setup complete</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+        {/* Success Banner after creating drop */}
+        {hasCreatedDrop && currentStep === 2 && (
+          <Card className="border-2 border-g3ms-green bg-gradient-to-r from-g3ms-green/10 to-g3ms-blue/10 shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 bg-g3ms-green rounded-full flex items-center justify-center">
+                    <CheckCircle className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-g3ms-green">Drop Created Successfully!</h3>
+                    <p className="text-muted-foreground">"{dropTitle}" is ready. Now let's invite your students.</p>
+                  </div>
+                </div>
+                <Button 
+                  onClick={() => setShowInviteStudents(true)}
+                  className="bg-g3ms-green hover:bg-g3ms-green/90"
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Invite Students
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Getting Started Steps */}
+        <Card className="border-2 border-g3ms-purple/20 bg-gradient-to-r from-g3ms-purple/5 to-g3ms-green/5">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 bg-g3ms-purple/10 rounded-lg flex items-center justify-center">
+                <Rocket className="h-5 w-5 text-g3ms-purple" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">Getting Started</CardTitle>
+                <CardDescription>Follow these steps to launch your first drop</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {gettingStartedSteps.map((step, index) => (
+                <div key={step.id} className="relative">
+                  <Card 
+                    className={`transition-all duration-200 hover:shadow-md ${
+                      step.primary ? 'ring-2 ring-g3ms-purple shadow-lg' : 'hover:shadow-sm'
+                    }`}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                          step.completed 
+                            ? 'bg-g3ms-green text-white' 
+                            : step.primary 
+                              ? 'bg-g3ms-purple text-white' 
+                              : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {step.completed ? (
+                            <CheckCircle className="h-4 w-4" />
+                          ) : (
+                            <step.icon className="h-4 w-4" />
+                          )}
+                        </div>
+                        <span className="text-sm font-medium text-muted-foreground">Step {step.id}</span>
+                      </div>
+                       <h3 className="font-semibold mb-2">{step.title}</h3>
+                      <p className="text-sm text-muted-foreground mb-3">{step.description}</p>
+                      {step.primary && (
+                        <Button 
+                          onClick={() => {
+                            if (step.id === 1) {
+                              setShowCreateForm(true);
+                            } else if (step.id === 2) {
+                              setShowInviteStudents(true);
+                            }
+                          }}
+                          className="w-full bg-g3ms-purple hover:bg-g3ms-purple/90"
+                          size="sm"
+                          disabled={step.id === 2 && !hasCreatedDrop}
+                        >
+                          {step.id === 1 ? 'Create Drop' : step.id === 2 ? 'Invite Students' : 'Continue'}
+                          <ArrowRight className="h-3 w-3 ml-2" />
+                        </Button>
+                      )}
+                      {step.id === 2 && !hasCreatedDrop && (
+                        <p className="text-xs text-muted-foreground mt-2 text-center">
+                          Complete step 1 first
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                  {index < gettingStartedSteps.length - 1 && (
+                    <div className="hidden lg:block absolute top-1/2 -right-2 transform -translate-y-1/2 z-10">
+                      <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Drop Ideas Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Drop Ideas */}
+          <div>
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-g3ms-yellow/10 rounded-lg flex items-center justify-center">
+                    <Lightbulb className="h-5 w-5 text-g3ms-yellow" />
+                  </div>
+                  <div>
+                    <CardTitle>Drop Ideas to Get You Started</CardTitle>
+                    <CardDescription>Popular templates loved by educators</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {dropIdeas.map((idea, index) => (
+                    <div key={index} className="border rounded-lg p-4 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-semibold">{idea.title}</h3>
+                            <Badge variant="outline" className="text-xs">
+                              {idea.category}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-3">{idea.description}</p>
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <PlayCircle className="h-3 w-3" />
+                              {idea.time}
+                            </span>
+                            <span>{idea.difficulty}</span>
+                          </div>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setShowCreateForm(true)}
+                          className="text-g3ms-purple hover:text-g3ms-purple hover:bg-g3ms-purple/10"
+                        >
+                          Use Template
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Created Drops List */}
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-g3ms-blue/10 rounded-lg flex items-center justify-center">
+                    <BarChart3 className="h-5 w-5 text-g3ms-blue" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Your Drops</CardTitle>
+                    <CardDescription>Manage your created drops</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isLoadingDrops ? (
+                  <div className="space-y-3">
+                    <div className="h-16 bg-muted animate-pulse rounded-lg"></div>
+                    <div className="h-16 bg-muted animate-pulse rounded-lg"></div>
+                  </div>
+                ) : drops.length > 0 ? (
+                  <div className="space-y-3">
+                    {drops.slice(0, 3).map((drop) => (
+                      <div key={drop.id} className="border rounded-lg p-3 hover:bg-muted/30 transition-colors">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-sm truncate">{drop.title}</h4>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge 
+                                variant={drop.status === 'LIVE' ? 'default' : 'secondary'}
+                                className="text-xs"
+                              >
+                                {drop.status}
+                              </Badge>
+                              <Badge 
+                                variant={drop.isPublished ? 'default' : 'outline'}
+                                className="text-xs"
+                              >
+                                {drop.isPublished ? 'Published' : 'Draft'}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                <span>{new Date(drop.scheduledAt).toLocaleDateString()}</span>
+                              </div>
+                              {drop.schools && drop.schools.length > 0 && (
+                                <div className="flex items-center gap-1">
+                                  <UsersIcon className="h-3 w-3" />
+                                  <span>{drop.schools.length} school(s)</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handlePublishDrop(drop.id, !drop.isPublished)}
+                              className="text-xs h-7"
+                            >
+                              {drop.isPublished ? 'Unpublish' : 'Publish'}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {drops.length > 3 && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => {/* Navigate to full drops list */}}
+                      >
+                        View All {drops.length} Drops
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No drops created yet</p>
+                    <p className="text-xs">Create your first drop to get started!</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Tips & Support */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-g3ms-green/10 rounded-lg flex items-center justify-center">
+                    <Heart className="h-5 w-5 text-g3ms-green" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Quick Tips</CardTitle>
+                    <CardDescription>Make your first drop amazing</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex gap-3">
+                    <div className="h-2 w-2 bg-g3ms-purple rounded-full mt-2 flex-shrink-0"></div>
+                    <p className="text-sm">Start with a clear learning objective</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="h-2 w-2 bg-g3ms-green rounded-full mt-2 flex-shrink-0"></div>
+                    <p className="text-sm">Keep challenges engaging but achievable</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="h-2 w-2 bg-g3ms-yellow rounded-full mt-2 flex-shrink-0"></div>
+                    <p className="text-sm">Include interactive elements when possible</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="h-2 w-2 bg-g3ms-blue rounded-full mt-2 flex-shrink-0"></div>
+                    <p className="text-sm">Test your drop before sharing with students</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Call to Action */}
+        <Card className="bg-gradient-to-r from-g3ms-purple/10 to-g3ms-green/10 border-2 border-dashed border-g3ms-purple/30">
+          <CardContent className="p-8 text-center">
+            <div className="space-y-4">
+              <div className="flex items-center justify-center">
+                <div className="h-16 w-16 bg-g3ms-purple rounded-full flex items-center justify-center">
+                  <Plus className="h-8 w-8 text-white" />
+                </div>
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold mb-2">Ready to Create Your First Drop?</h2>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  Transform your lesson into an interactive learning experience that students will remember.
+                </p>
+              </div>
+              <Button 
+                onClick={() => setShowCreateForm(true)}
+                size="lg"
+                className="bg-g3ms-purple hover:bg-g3ms-purple/90 px-8"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Create My First Drop
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Create Drop Modal */}
+      {showCreateForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-g3ms-purple" />
+                    Create Your First Drop
+                  </CardTitle>
+                  <CardDescription>Let's build something amazing for your students!</CardDescription>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowCreateForm(false)}
+                >
+                  ✕
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <CreateDropForm onDropCreated={handleDropCreated} />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Invite Students Modal */}
+      {showInviteStudents && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-g3ms-green" />
+                    Invite Students to Your Drop
+                  </CardTitle>
+                  <CardDescription>Choose how you want students to access your drop</CardDescription>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowInviteStudents(false)}
+                >
+                  ✕
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <InviteStudentsStep
+                dropTitle={dropTitle || "My Amazing Drop"}
+                onComplete={() => {
+                  setShowInviteStudents(false);
+                  setCurrentStep(3);
+                }}
+                onBack={() => {
+                  setShowInviteStudents(false);
+                  setCurrentStep(hasCreatedDrop ? 2 : 1);
+                }}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default EducatorDashboard;
