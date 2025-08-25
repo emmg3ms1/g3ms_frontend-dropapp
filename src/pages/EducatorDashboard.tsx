@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { CreateDropForm } from '@/components/CreateDropForm';
 import { InviteStudentsStep } from '@/components/InviteStudentsStep';
+import { useEducatorDropStore } from '@/stores/educatorDropStore';
+import { apiService } from '@/services/api';
+import { toast } from 'sonner';
 import { 
   Plus, 
   Users, 
@@ -38,6 +41,57 @@ const EducatorDashboard = () => {
   const [hasCreatedDrop, setHasCreatedDrop] = useState(false);
   const [dropTitle, setDropTitle] = useState('');
   const navigate = useNavigate();
+
+  // Get drops data and actions from store
+  const { 
+    drops, 
+    isLoading: isLoadingDrops, 
+    error, 
+    setDrops, 
+    updateDrop, 
+    setLoading, 
+    setError 
+  } = useEducatorDropStore();
+
+  // Fetch drops when component mounts
+  useEffect(() => {
+    const fetchDrops = async () => {
+      setLoading(true);
+      try {
+        const response = await apiService.getEducatorDrops();
+        setDrops(response.data);
+      } catch (error) {
+        console.error('Failed to fetch drops:', error);
+        setError(error instanceof Error ? error.message : 'Failed to fetch drops');
+        toast.error('Failed to load your drops. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDrops();
+  }, [setDrops, setLoading, setError]);
+
+  // Handle publish/unpublish drop
+  const handlePublishDrop = useCallback(async (dropId: string, isPublished: boolean) => {
+    try {
+      await apiService.publishDrop(dropId, isPublished);
+      
+      // Update the drop in the store
+      updateDrop(dropId, { isPublished });
+      
+      toast.success(
+        isPublished 
+          ? 'Drop published successfully! Students can now access it.' 
+          : 'Drop unpublished. Students can no longer access it.'
+      );
+    } catch (error) {
+      console.error('Failed to update drop publish status:', error);
+      toast.error(
+        `Failed to ${isPublished ? 'publish' : 'unpublish'} drop. Please try again.`
+      );
+    }
+  }, [updateDrop]);
 
   const handleDropCreated = (title: string) => {
     setDropTitle(title);
