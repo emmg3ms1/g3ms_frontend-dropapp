@@ -4,9 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { CreateDropForm } from '@/components/CreateDropForm';
+import { toast } from 'sonner';
 import { 
   Plus, 
   TrendingUp, 
@@ -31,22 +33,79 @@ import {
   Building,
   Zap,
   Gift,
-  MessageSquare
+  MessageSquare,
+  Edit,
+  MoreHorizontal,
+  Clock,
+  Filter,
+  Search
 } from 'lucide-react';
 
 const BrandsDashboard = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [hasCreatedDrop, setHasCreatedDrop] = useState(false); // New user hasn't created anything
-  const [dropTitle, setDropTitle] = useState('');
+  const [hasCreatedDrop, setHasCreatedDrop] = useState(true); // Start with a sample drop created
+  const [dropTitle, setDropTitle] = useState('Nike Air Max Student Challenge');
   const navigate = useNavigate();
 
   const handleDropCreated = (title: string) => {
     setDropTitle(title);
     setHasCreatedDrop(true);
-    setCurrentStep(2);
     setShowCreateForm(false);
   };
+
+  // Handle campaign actions
+  const handleViewCampaign = (campaign: any) => {
+    // Navigate to campaign analytics/view page
+    navigate(`/campaigns/${campaign.id}/analytics`);
+  };
+
+  const handleEditCampaign = (campaign: any) => {
+    // For now, show a toast - could open edit form or navigate to edit page
+    toast.info(`Edit functionality for "${campaign.title}" coming soon!`);
+  };
+
+  const handleViewAnalytics = (campaign: any) => {
+    // Navigate to detailed analytics
+    navigate(`/campaigns/${campaign.id}/analytics`);
+  };
+
+  const handleDuplicateCampaign = (campaign: any) => {
+    toast.success(`Created duplicate of "${campaign.title}"!`);
+    // Would typically make API call to duplicate the campaign
+  };
+
+  const handleShareCampaign = (campaign: any) => {
+    const shareUrl = `${window.location.origin}/campaigns/join/${campaign.id}`;
+    navigator.clipboard.writeText(shareUrl);
+    toast.success("Campaign sharing link copied to clipboard!");
+  };
+
+  const handleDeleteCampaign = (campaign: any) => {
+    // Show confirmation and delete
+    if (confirm(`Are you sure you want to delete "${campaign.title}"?`)) {
+      toast.success(`Deleted "${campaign.title}"`);
+    }
+  };
+
+  // Mock campaign data - would come from API
+  const mockCampaigns = hasCreatedDrop ? [
+    {
+      id: "camp-1",
+      title: "Nike Air Max Challenge",
+      campaignType: "Product Launch",
+      status: "LIVE",
+      createdAt: new Date().toISOString(),
+      scheduledAt: new Date().toISOString(),
+      flatFee: 250,
+      inKindGoods: 1000,
+      totalBudget: 1250,
+      reach: 2400,
+      engagement: 85,
+      conversions: 142,
+      brand: "Nike",
+      category: "Athletic Wear"
+    }
+  ] : [];
 
   // Mock brand data for new user
   const brand = {
@@ -95,51 +154,6 @@ const BrandsDashboard = () => {
       estimatedReach: "800-1,500 students",
       estimatedBudget: "$6,000-$10,000", 
       duration: "1-2 weeks"
-    }
-  ];
-
-  // Analytics data for new user (empty state)
-  const analytics = {
-    impressions: 0,
-    clicks: 0,
-    conversions: 0,
-    ctr: 0,
-    conversionRate: 0,
-    avgEngagementTime: "0m 0s"
-  };
-
-  const gettingStartedSteps = [
-    {
-      id: 1,
-      title: "Create Brand Campaign",
-      description: "Launch your first branded drop",
-      icon: Plus,
-      completed: hasCreatedDrop,
-      primary: !hasCreatedDrop
-    },
-    {
-      id: 2,
-      title: "Set Target Audience",
-      description: "Define your student demographics",
-      icon: Target,
-      completed: false,
-      primary: hasCreatedDrop && currentStep === 2
-    },
-    {
-      id: 3,
-      title: "Track Performance",
-      description: "Monitor engagement and ROI",
-      icon: BarChart3,
-      completed: false,
-      primary: currentStep === 3
-    },
-    {
-      id: 4,
-      title: "Optimize Results",
-      description: "Improve based on data insights",
-      icon: TrendingUp,
-      completed: false,
-      primary: currentStep === 4
     }
   ];
 
@@ -267,99 +281,300 @@ const BrandsDashboard = () => {
           </Card>
         )}
 
-        {/* Success Banner after creating campaign */}
-        {hasCreatedDrop && currentStep === 2 && (
-          <Card className="border-2 border-g3ms-green bg-gradient-to-r from-g3ms-green/10 to-g3ms-blue/10 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 bg-g3ms-green rounded-full flex items-center justify-center">
-                    <CheckCircle className="h-6 w-6 text-white" />
+
+        {/* My Campaigns Section - Always show */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-g3ms-blue/10 rounded-lg flex items-center justify-center">
+                  <BarChart3 className="h-5 w-5 text-g3ms-blue" />
+                </div>
+                <div>
+                  <CardTitle>My Campaigns</CardTitle>
+                  <CardDescription>
+                    {mockCampaigns.length > 0 
+                      ? "Manage and monitor your brand campaigns" 
+                      : "Your created campaigns will appear here"
+                    }
+                  </CardDescription>
+                </div>
+              </div>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    onClick={() => setShowCreateForm(true)}
+                    className="bg-g3ms-purple hover:bg-g3ms-purple/90"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Campaign
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filter
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Search className="h-4 w-4 mr-2" />
+                    Search
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+              {mockCampaigns.length > 0 ? (
+                <div className="space-y-4">
+                  {mockCampaigns.map((campaign) => (
+                    <Card
+                      key={campaign.id}
+                      className="border-l-4 border-l-g3ms-purple/30 hover:shadow-md transition-shadow"
+                    >
+                      <CardContent className="p-4">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                          {/* Campaign Info */}
+                          <div className="lg:col-span-4">
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-semibold text-lg">{campaign.title}</h3>
+                                <Badge
+                                  variant={campaign.status === "LIVE" ? "default" : "outline"}
+                                  className={campaign.status === "LIVE" ? "bg-g3ms-green text-white" : ""}
+                                >
+                                  {campaign.status}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <span className="bg-g3ms-purple/10 text-g3ms-purple px-2 py-1 rounded-full text-xs font-medium">
+                                  {campaign.campaignType}
+                                </span>
+                                <span>{campaign.category}</span>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                Created {new Date(campaign.createdAt).toLocaleDateString()} • {campaign.brand}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Performance Stats */}
+                          <div className="lg:col-span-3">
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">Reach</span>
+                                <span className="font-medium">{campaign.reach.toLocaleString()}</span>
+                              </div>
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">Engagement</span>
+                                <span className="font-medium">{campaign.engagement}%</span>
+                              </div>
+                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Trophy className="h-3 w-3" />
+                                  {campaign.conversions} conversions
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Budget & Pricing Structure */}
+                          <div className="lg:col-span-3">
+                            <div className="space-y-2 text-sm">
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <DollarSign className="h-3 w-3" />
+                                <span>Campaign Fee: $250</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Package className="h-3 w-3" />
+                                <span>In-Kind Goods: $1,000</span>
+                              </div>
+                              <div className="flex items-center gap-2 font-medium text-foreground">
+                                <span>Total Value: ${campaign.totalBudget.toLocaleString()}</span>
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Gift cards • Event tickets • Merchandise
+                              </div>
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Calendar className="h-3 w-3" />
+                                <span>
+                                  Started {new Date(campaign.scheduledAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="lg:col-span-2">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleViewCampaign(campaign)}
+                                title="View Campaign Analytics"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleEditCampaign(campaign)}
+                                title="Edit Campaign"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    title="More Options"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleViewAnalytics(campaign)}>
+                                    View Analytics
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDuplicateCampaign(campaign)}>
+                                    Duplicate
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleShareCampaign(campaign)}>
+                                    Share
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem 
+                                    className="text-red-600"
+                                    onClick={() => handleDeleteCampaign(campaign)}
+                                  >
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="mx-auto h-24 w-24 bg-g3ms-purple/10 rounded-full flex items-center justify-center mb-4">
+                    <Package className="h-12 w-12 text-g3ms-purple/30" />
                   </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-g3ms-green">Campaign Created Successfully!</h3>
-                    <p className="text-muted-foreground">"{dropTitle}" is now live and reaching students.</p>
+                  <h3 className="text-lg font-semibold mb-2">No campaigns yet</h3>
+                  <p className="text-muted-foreground mb-4 max-w-sm mx-auto">
+                    Create your first brand campaign to start engaging with students and see your results here.
+                  </p>
+                  <Button 
+                    onClick={() => setShowCreateForm(true)}
+                    className="bg-g3ms-purple hover:bg-g3ms-purple/90"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create First Campaign
+                  </Button>
+                </div>
+              )}
+
+              {/* Stats Summary */}
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-g3ms-purple/5 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-g3ms-purple">
+                    {mockCampaigns.length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Total Campaigns</div>
+                </div>
+                <div className="bg-g3ms-green/5 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-g3ms-green">
+                    {mockCampaigns.filter((c) => c.status === "LIVE").length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Live Campaigns</div>
+                </div>
+                <div className="bg-g3ms-blue/5 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-g3ms-blue">
+                    {mockCampaigns.reduce((acc, c) => acc + c.reach, 0).toLocaleString()}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Total Reach</div>
+                </div>
+                <div className="bg-g3ms-yellow/5 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-g3ms-yellow">
+                    {mockCampaigns.reduce((acc, c) => acc + c.conversions, 0)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Total Conversions</div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Performance Analytics - Always visible if campaigns exist */}
+        {hasCreatedDrop && (
+          <Card className="border-2 border-g3ms-blue/20 bg-gradient-to-r from-g3ms-blue/5 to-g3ms-green/5">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-g3ms-blue/10 rounded-lg flex items-center justify-center">
+                  <BarChart3 className="h-5 w-5 text-g3ms-blue" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">Campaign Performance</CardTitle>
+                  <CardDescription>Real-time analytics for "Nike Air Max Student Challenge"</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-white rounded-lg p-4 border">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Eye className="h-5 w-5 text-g3ms-blue" />
+                    <span className="text-sm font-medium">Impressions</span>
+                  </div>
+                  <div className="text-2xl font-bold text-g3ms-blue">24.5K</div>
+                  <div className="text-xs text-g3ms-green">↑ 12% vs yesterday</div>
+                </div>
+                <div className="bg-white rounded-lg p-4 border">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Heart className="h-5 w-5 text-g3ms-purple" />
+                    <span className="text-sm font-medium">Engagement</span>
+                  </div>
+                  <div className="text-2xl font-bold text-g3ms-purple">8.7%</div>
+                  <div className="text-xs text-g3ms-green">↑ 3.2% vs yesterday</div>
+                </div>
+                <div className="bg-white rounded-lg p-4 border">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Trophy className="h-5 w-5 text-g3ms-yellow" />
+                    <span className="text-sm font-medium">Conversions</span>
+                  </div>
+                  <div className="text-2xl font-bold text-g3ms-yellow">142</div>
+                  <div className="text-xs text-g3ms-green">↑ 8 new today</div>
+                </div>
+                <div className="bg-white rounded-lg p-4 border">
+                  <div className="flex items-center gap-3 mb-2">
+                    <DollarSign className="h-5 w-5 text-g3ms-green" />
+                    <span className="text-sm font-medium">ROI</span>
+                  </div>
+                  <div className="text-2xl font-bold text-g3ms-green">3.4x</div>
+                  <div className="text-xs text-g3ms-green">Above target</div>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold mb-3">Top Performing Content</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm p-2 bg-g3ms-green/10 rounded">
+                    <span>🎬 Nike Innovation Video</span>
+                    <span className="font-medium">94% completion</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm p-2 bg-g3ms-blue/10 rounded">
+                    <span>🏃 Athletic Challenge Quiz</span>
+                    <span className="font-medium">87% engagement</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm p-2 bg-g3ms-purple/10 rounded">
+                    <span>👟 Product Design Activity</span>
+                    <span className="font-medium">76% completion</span>
                   </div>
                 </div>
-                <Button 
-                  onClick={() => setCurrentStep(3)}
-                  className="bg-g3ms-green hover:bg-g3ms-green/90"
-                >
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  View Analytics
-                </Button>
               </div>
             </CardContent>
           </Card>
         )}
-
-        {/* Getting Started Steps */}
-        <Card className="border-2 border-g3ms-purple/20 bg-gradient-to-r from-g3ms-purple/5 to-g3ms-green/5">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-g3ms-purple/10 rounded-lg flex items-center justify-center">
-                <Zap className="h-5 w-5 text-g3ms-purple" />
-              </div>
-              <div>
-                <CardTitle className="text-xl">Getting Started</CardTitle>
-                <CardDescription>Follow these steps to launch your first successful campaign</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {gettingStartedSteps.map((step, index) => (
-                <div key={step.id} className="relative">
-                  <Card 
-                    className={`transition-all duration-200 hover:shadow-md ${
-                      step.primary ? 'ring-2 ring-g3ms-purple shadow-lg' : 'hover:shadow-sm'
-                    }`}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                          step.completed 
-                            ? 'bg-g3ms-green text-white' 
-                            : step.primary 
-                              ? 'bg-g3ms-purple text-white' 
-                              : 'bg-muted text-muted-foreground'
-                        }`}>
-                          {step.completed ? (
-                            <CheckCircle className="h-4 w-4" />
-                          ) : (
-                            <step.icon className="h-4 w-4" />
-                          )}
-                        </div>
-                        <span className="text-sm font-medium text-muted-foreground">Step {step.id}</span>
-                      </div>
-                      <h3 className="font-semibold mb-2">{step.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-3">{step.description}</p>
-                      {step.primary && (
-                        <Button 
-                          onClick={() => {
-                            if (step.id === 1) {
-                              setShowCreateForm(true);
-                            }
-                          }}
-                          className="w-full bg-g3ms-purple hover:bg-g3ms-purple/90"
-                          size="sm"
-                        >
-                          {step.id === 1 ? 'Create Campaign' : 'Continue'}
-                          <ArrowRight className="h-3 w-3 ml-2" />
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                  {index < gettingStartedSteps.length - 1 && (
-                    <div className="hidden lg:block absolute top-1/2 -right-2 transform -translate-y-1/2 z-10">
-                      <ArrowRight className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Campaign Ideas Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -19,6 +19,15 @@ export const BrandPartnerForm = ({ onClose }: { onClose: () => void }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
+  // Check if required fields are filled and valid
+  const isFormValid = formData.companyName.trim() && 
+                      formData.contactName.trim() && 
+                      formData.email.trim() && 
+                      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) &&
+                      formData.phone.trim() && 
+                      /^\+?[1-9]\d{1,14}$/.test(formData.phone.replace(/[^\d+]/g, '')) &&
+                      formData.message.trim();
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -205,7 +214,7 @@ ${sanitizedData.message}
           <div className="flex gap-3 pt-4">
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !isFormValid}
               className="flex-1 bg-gradient-to-r from-g3ms-purple to-pink-500 hover:from-purple-600 hover:to-pink-600"
             >
               {isSubmitting ? "Opening Email..." : "Submit Interest"}

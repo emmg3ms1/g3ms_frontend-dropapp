@@ -20,12 +20,29 @@ export const G3MSExperience = () => {
   const { setDropData, setIsDropCreationFlow } = useDropData();
   const [showSignupFlow, setShowSignupFlow] = useState(false);
   
+  // Student form state
+  const [studentFormData, setStudentFormData] = useState({
+    city: '',
+    state: '',
+    school: '',
+    grade: ''
+  });
+  
   // Educator form state
   const [educatorFormData, setEducatorFormData] = useState({
     dropType: '',
     grade: '',
     subject: '',
     rtiTier: '',
+    learningGoal: ''
+  });
+
+  // Brand form state
+  const [brandFormData, setBrandFormData] = useState({
+    brandName: '',
+    campaignGoal: '',
+    rewardType: '',
+    budgetRange: '',
     learningGoal: ''
   });
   const usStates = [
@@ -132,6 +149,38 @@ export const G3MSExperience = () => {
     }));
   };
 
+  const updateStudentFormData = (field: string, value: string) => {
+    setStudentFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const updateBrandFormData = (field: string, value: string) => {
+    setBrandFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Form validation functions
+  const isStudentFormValid = studentFormData.city.trim() && 
+                             studentFormData.state && 
+                             studentFormData.school.trim() && 
+                             studentFormData.grade;
+
+  const isEducatorFormValid = educatorFormData.dropType && 
+                              educatorFormData.grade && 
+                              educatorFormData.subject && 
+                              educatorFormData.rtiTier && 
+                              educatorFormData.learningGoal.trim();
+
+  const isBrandFormValid = brandFormData.brandName.trim() && 
+                           brandFormData.campaignGoal && 
+                           brandFormData.rewardType && 
+                           brandFormData.budgetRange && 
+                           brandFormData.learningGoal.trim();
+
   return (
     <section className="py-16 sm:py-20 lg:py-24 bg-gradient-to-br from-gray-50 to-white">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
@@ -193,11 +242,17 @@ export const G3MSExperience = () => {
                 <div className="grid grid-cols-2 gap-2 md:gap-3 mb-3">
                   <div className="space-y-0.5">
                     <Label htmlFor="student-city" className="text-xs font-medium">City</Label>
-                    <Input id="student-city" placeholder="Type city name" className="text-sm h-9 touch-manipulation" />
+                    <Input 
+                      id="student-city" 
+                      placeholder="Type city name" 
+                      className="text-sm h-9 touch-manipulation"
+                      value={studentFormData.city}
+                      onChange={(e) => updateStudentFormData('city', e.target.value)}
+                    />
                   </div>
                   <div className="space-y-0.5">
                     <Label htmlFor="student-state" className="text-xs font-medium">State</Label>
-                    <Select>
+                    <Select value={studentFormData.state} onValueChange={(value) => updateStudentFormData('state', value)}>
                       <SelectTrigger className="text-sm h-9 touch-manipulation">
                         <SelectValue placeholder="Select state" />
                       </SelectTrigger>
@@ -212,11 +267,17 @@ export const G3MSExperience = () => {
                   </div>
                   <div className="space-y-0.5">
                     <Label htmlFor="student-school" className="text-xs font-medium">School</Label>
-                    <Input id="student-school" placeholder="Type school name" className="text-sm h-9 touch-manipulation" />
+                    <Input 
+                      id="student-school" 
+                      placeholder="Type school name" 
+                      className="text-sm h-9 touch-manipulation"
+                      value={studentFormData.school}
+                      onChange={(e) => updateStudentFormData('school', e.target.value)}
+                    />
                   </div>
                   <div className="space-y-0.5">
                     <Label htmlFor="student-grade" className="text-xs font-medium">Grade</Label>
-                    <Select>
+                    <Select value={studentFormData.grade} onValueChange={(value) => updateStudentFormData('grade', value)}>
                       <SelectTrigger className="text-sm h-9 touch-manipulation">
                         <SelectValue placeholder="Select grade" />
                       </SelectTrigger>
@@ -233,6 +294,7 @@ export const G3MSExperience = () => {
 
                 <GatedSignupForm audience="student">
                   <Button 
+                    disabled={!isStudentFormValid}
                     className="w-full text-white font-semibold touch-manipulation h-11 sm:h-12 text-sm sm:text-base mt-3 sm:mt-5" 
                     style={{ backgroundColor: '#aa1b83' }}
                   >
@@ -332,6 +394,7 @@ export const G3MSExperience = () => {
 
                 <GatedSignupForm audience="educator" onSubmit={handleEducatorFormSubmit}>
                   <Button 
+                    disabled={!isEducatorFormValid}
                     className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold text-sm sm:text-base touch-manipulation h-11 sm:h-12"
                     onClick={handleEducatorFormSubmit}
                   >
@@ -364,13 +427,15 @@ export const G3MSExperience = () => {
                       <Input 
                         id="brand-name" 
                         placeholder="Enter brand or organization name" 
-                        className="text-sm h-9 touch-manipulation" 
+                        className="text-sm h-9 touch-manipulation"
+                        value={brandFormData.brandName}
+                        onChange={(e) => updateBrandFormData('brandName', e.target.value)}
                       />
                     </div>
                     
                     <div className="space-y-0.5">
                       <Label htmlFor="campaign-goal" className="text-xs font-medium">Campaign Goal</Label>
-                      <Select>
+                      <Select value={brandFormData.campaignGoal} onValueChange={(value) => updateBrandFormData('campaignGoal', value)}>
                         <SelectTrigger className="text-sm h-9 touch-manipulation">
                           <SelectValue placeholder="Select campaign goal" />
                         </SelectTrigger>
@@ -386,7 +451,7 @@ export const G3MSExperience = () => {
                     
                     <div className="space-y-0.5">
                       <Label htmlFor="reward-type" className="text-xs font-medium">Reward Type</Label>
-                      <Select>
+                      <Select value={brandFormData.rewardType} onValueChange={(value) => updateBrandFormData('rewardType', value)}>
                         <SelectTrigger className="text-sm h-9 touch-manipulation">
                           <SelectValue placeholder="Select reward" />
                         </SelectTrigger>
@@ -402,7 +467,7 @@ export const G3MSExperience = () => {
                     
                     <div className="space-y-0.5">
                       <Label htmlFor="budget" className="text-xs font-medium">Budget Range</Label>
-                      <Select>
+                      <Select value={brandFormData.budgetRange} onValueChange={(value) => updateBrandFormData('budgetRange', value)}>
                         <SelectTrigger className="text-sm h-9 touch-manipulation">
                           <SelectValue placeholder="What's your budget for this campaign?" />
                         </SelectTrigger>
@@ -425,6 +490,8 @@ export const G3MSExperience = () => {
                     placeholder="Describe the educational theme, standards, or learning objectives for your branded Drop."
                     className="text-sm min-h-[96px] touch-manipulation"
                     rows={4}
+                    value={brandFormData.learningGoal}
+                    onChange={(e) => updateBrandFormData('learningGoal', e.target.value)}
                   />
                 </div>
 
@@ -435,6 +502,7 @@ export const G3MSExperience = () => {
 
                 <GatedSignupForm audience="brand">
                   <Button 
+                    disabled={!isBrandFormValid}
                     className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold text-sm sm:text-base touch-manipulation h-11 sm:h-12"
                   >
                     🚀 Launch a Branded Drop

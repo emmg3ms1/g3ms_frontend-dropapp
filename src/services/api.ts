@@ -256,6 +256,18 @@ class ApiService {
   async getUserDrops(): Promise<any[]> {
     return this.request('/drops/user');
   }
+
+  // Guardian approval methods
+  async getGuardianRequest(approvalId: string): Promise<any> {
+    return this.request(`/guardian/requests/${approvalId}`);
+  }
+
+  async approveGuardianRequest(approvalId: string, approved: boolean): Promise<any> {
+    return this.request(`/guardian/requests/${approvalId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ approved })
+    });
+  }
 }
 
 export const apiService = new ApiService();

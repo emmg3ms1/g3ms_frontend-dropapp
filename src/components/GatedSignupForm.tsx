@@ -59,6 +59,8 @@ const GatedSignupForm: React.FC<GatedSignupFormProps> = ({ audience, children, o
     setIsLoading(true);
     try {
       console.log('🚀 Starting Google signup process');
+      // Set flag to indicate this signup came from GatedSignupForm
+      sessionStorage.setItem('gated_signup_flow', 'true');
       await googleLogin(true); // Pass true for signup flow
       // OAuth flow and postAuth flow will handle redirection automatically
     } catch (error) {
@@ -77,6 +79,8 @@ const GatedSignupForm: React.FC<GatedSignupFormProps> = ({ audience, children, o
     setIsLoading(true);
     try {
       console.log('🚀 Starting Apple signup process');
+      // Set flag to indicate this signup came from GatedSignupForm
+      sessionStorage.setItem('gated_signup_flow', 'true');
       await appleLogin(true); // Pass true for signup flow
       // OAuth flow and postAuth flow will handle redirection automatically
     } catch (error) {
@@ -191,7 +195,11 @@ const GatedSignupForm: React.FC<GatedSignupFormProps> = ({ audience, children, o
               className="flex-1 h-12 border-gray-300 focus:border-g3ms-purple focus:ring-g3ms-purple"
             />
             <DialogClose asChild>
-              <Button onClick={() => setShowSignupFlow(true)}
+              <Button onClick={() => {
+                // Set flag to indicate this signup came from GatedSignupForm
+                sessionStorage.setItem('gated_signup_flow', 'true');
+                setShowSignupFlow(true);
+              }}
                 className={`bg-gradient-to-r ${getButtonColor()} hover:opacity-90 text-white h-12 px-4`}
               >
                 <ArrowRight className="h-4 w-4" />

@@ -64,17 +64,17 @@ export const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen flex flex-col bg-gradient-to-br from-purple-50 via-pink-50 to-cyan-50 pt-16 sm:pt-20 pb-8 sm:pb-12">
-      {/* Martha's Vineyard Event Banner - Full Width */}
+      {/* Pricing Banner - Full Width */}
       <div className="w-full text-white py-3 sm:py-4 px-4 sm:px-6 shadow-lg" style={{ backgroundColor: '#aa1b83' }}>
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 text-center">
           <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold">
-            <span>Join us for our FREE Youth AI Innovation Lab on Martha's Vineyard</span>
+            <span>Kick off the school year with G3MS — free for schools, simple plans for families, powered by brands.</span>
           </div>
           <Button
-            onClick={() => window.open('https://www.eventbrite.com/e/youth-ai-innovation-lab-on-mv-tickets-1378275351679?aff=oddtdtcreator', '_blank')}
+            onClick={() => window.location.href = '/pricing'}
             className="bg-white text-g3ms-purple hover:bg-gray-100 rounded-full px-4 sm:px-6 py-2 text-xs sm:text-sm font-semibold transform hover:scale-105 transition-all duration-200 shadow-lg touch-manipulation min-h-[40px]"
           >
-            Register for FREE Event
+            See Pricing
           </Button>
         </div>
       </div>

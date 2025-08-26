@@ -8,10 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Play, CheckCircle, ArrowRight, MessageCircle, BookOpen, Trophy, Diamond } from 'lucide-react';
+import { Play, CheckCircle, ArrowRight, ArrowLeft, MessageCircle, BookOpen, Trophy, Diamond } from 'lucide-react';
 import RewardClaimModal from '@/components/RewardClaimModal';
 
 const LiveDrop = () => {
+  console.log('LiveDrop component is rendering');
   const { id } = useParams();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
@@ -19,9 +20,15 @@ const LiveDrop = () => {
   const [responseText, setResponseText] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState('');
-  const [dropProgress, setDropProgress] = useState(25); // Start at 25% for step 1
+  const [dropProgress, setDropProgress] = useState(20); // Start at 20% for step 1 (5 steps total)
   const [showRewardModal, setShowRewardModal] = useState(false);
   const [rewardType, setRewardType] = useState<'giftcard' | 'event' | 'tokens'>('giftcard');
+  
+  // Ayo conversation state
+  const [ayoProcessing, setAyoProcessing] = useState(false);
+  const [ayoMessages, setAyoMessages] = useState<Array<{type: 'ayo' | 'user', message: string}>>([]);
+  const [ayoCompleted, setAyoCompleted] = useState(false);
+  const [misconceptionDetected, setMisconceptionDetected] = useState(false);
 
   const shareMessages = [
     "Just crushed a Live Drop challenge and earned tokens! 🎉 Join me on G3MS and let's learn together! 💎",
@@ -40,8 +47,7 @@ const LiveDrop = () => {
     switch (type) {
       case 'giftcard':
         return {
-          title: 'Amazon eGift Card',
-          image: '/lovable-uploads/27c21c32-f8dc-49b6-95bf-1ed20558f18c.png',
+          title: '$15 Amazon Gift Card',
           website: 'www.amazon.com',
           message: 'Congratulations on Redeeming Your Gift Card!',
           details: 'Your reward is on its way, NO CAP! Please allow 1-48 hours for delivery. We appreciate your patience and are excited for you to enjoy your gift card soon!',
@@ -67,8 +73,9 @@ const LiveDrop = () => {
   const steps = [
     { id: 1, name: 'Watch', icon: Play, description: 'Watch the video' },
     { id: 2, name: 'Respond', icon: MessageCircle, description: 'Share your thoughts' },
-    { id: 3, name: 'Quiz', icon: BookOpen, description: 'Answer questions' },
-    { id: 4, name: 'Win', icon: Trophy, description: 'Claim rewards' }
+    { id: 3, name: 'Ayo', icon: () => <img src="/lovable-uploads/aaa0e430-824d-417a-b389-b89e33406fe2.png" alt="Ayo" className="w-4 h-4" />, description: 'AI feedback review' },
+    { id: 4, name: 'Quiz', icon: BookOpen, description: 'Answer questions' },
+    { id: 5, name: 'Win', icon: Trophy, description: 'Claim rewards' }
   ];
 
   const quizQuestions = [
@@ -89,10 +96,21 @@ const LiveDrop = () => {
   };
 
   const handleNextStep = () => {
-    if (currentStep < 4) {
+    if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
-      setDropProgress((currentStep + 1) * 25);
+      setDropProgress((currentStep + 1) * 20);
     }
+  };
+
+  const handlePrevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+      setDropProgress((currentStep - 1) * 20);
+    }
+  };
+
+  const handleBackToMain = () => {
+    navigate('/drops/main');
   };
 
   const handleCompleteDropClick = () => {
@@ -105,7 +123,8 @@ const LiveDrop = () => {
     switch (currentStep) {
       case 1: return videoCompleted;
       case 2: return uploadedFile !== null;
-      case 3: return selectedAnswer !== '';
+      case 3: return ayoCompleted;
+      case 4: return selectedAnswer !== '';
       default: return true;
     }
   };
@@ -144,9 +163,20 @@ const LiveDrop = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b px-4 py-3">
         <div className="flex items-center justify-between max-w-4xl mx-auto">
-          <div className="flex items-center gap-2">
-            <img src="/lovable-uploads/7588041f-8987-4a29-bd33-41e667d9b54a.png" alt="G3MS" className="w-8 h-8" />
-            <h1 className="text-xl font-bold text-foreground">Live Drop Challenge</h1>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBackToMain}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </Button>
+            <div className="flex items-center gap-2">
+              <img src="/lovable-uploads/7588041f-8987-4a29-bd33-41e667d9b54a.png" alt="G3MS" className="w-8 h-8" />
+              <h1 className="text-xl font-bold text-foreground">Live Drop Challenge</h1>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Progress value={dropProgress} className="w-24" />
@@ -277,21 +307,190 @@ const LiveDrop = () => {
                 </div>
 
                 <div className="text-center">
-                  <Button 
-                    onClick={handleNextStep}
-                    disabled={!canProceedToNextStep()}
-                    className="text-white font-semibold"
-                    style={{ background: canProceedToNextStep() ? 'linear-gradient(135deg, #aa1b83 0%, #3ec7ac 100%)' : undefined }}
-                    size="lg"
-                  >
-                    Continue to Quiz <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
+                  <div className="flex gap-3 justify-center">
+                    {currentStep > 1 && (
+                      <Button
+                        variant="outline"
+                        onClick={handlePrevStep}
+                        className="flex items-center gap-2"
+                        size="lg"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        Previous
+                      </Button>
+                    )}
+                    <Button 
+                      onClick={handleNextStep}
+                      disabled={!canProceedToNextStep()}
+                      className="text-white font-semibold"
+                      style={{ background: canProceedToNextStep() ? 'linear-gradient(135deg, #aa1b83 0%, #3ec7ac 100%)' : undefined }}
+                      size="lg"
+                    >
+                      Continue to Ayo Review <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Step 3: Quiz */}
+            {/* Step 3: Ayo Review */}
             {currentStep === 3 && (
+              <div className="space-y-6">
+                <div className="text-center mb-6">
+                  <div className="flex items-center justify-center gap-3 mb-4">
+                    <img src="/lovable-uploads/aaa0e430-824d-417a-b389-b89e33406fe2.png" alt="Ayo" className="w-12 h-12" />
+                    <h3 className="text-xl font-semibold">Ayo is reviewing your response...</h3> 
+                  </div>
+                  <p className="text-muted-foreground">AI-powered feedback on your submission</p>
+                </div>
+
+                {/* Processing Animation */}
+                {ayoProcessing && (
+                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6 text-center">
+                    <div className="flex items-center justify-center gap-3 mb-4">
+                      <img src="/lovable-uploads/aaa0e430-824d-417a-b389-b89e33406fe2.png" alt="Ayo" className="w-8 h-8 animate-pulse" />
+                      <div className="animate-pulse">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                          <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {uploadedFile?.type.startsWith('video/') ? 'Converting speech to text...' : 
+                       uploadedFile?.type.startsWith('image/') ? 'Analyzing image and extracting text...' : 
+                       'Processing your response...'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Ayo Conversation */}
+                {ayoMessages.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="bg-white rounded-lg border p-4 max-h-96 overflow-y-auto">
+                      {ayoMessages.map((message, index) => (
+                        <div key={index} className={`flex gap-3 mb-4 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                          {message.type === 'ayo' && (
+                            <img src="/lovable-uploads/aaa0e430-824d-417a-b389-b89e33406fe2.png" alt="Ayo" className="w-8 h-8 flex-shrink-0 mt-1" />
+                          )}
+                          <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                            message.type === 'ayo' 
+                              ? 'bg-purple-100 text-purple-900' 
+                              : 'bg-blue-500 text-white'
+                          }`}>
+                            <p className="text-sm">{message.message}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mock Conversation for Demo */}
+                {!ayoProcessing && ayoMessages.length === 0 && (
+                  <div className="space-y-4">
+                    <Button 
+                      onClick={() => {
+                        setAyoProcessing(true);
+                        // Simulate processing time
+                        setTimeout(() => {
+                          setAyoProcessing(false);
+                          setAyoMessages([
+                            {type: 'ayo', message: "I've reviewed your response! I noticed you're thinking about absolute value as negative numbers only. What happens if the number is positive?"},
+                          ]);
+                          setMisconceptionDetected(true);
+                        }, 3000);
+                      }}
+                      className="w-full text-white font-semibold"
+                      style={{ background: 'linear-gradient(135deg, #aa1b83 0%, #3ec7ac 100%)' }}
+                      size="lg"
+                    >
+                      Start Ayo Review
+                    </Button>
+                    <div className="text-center">
+                      <Button
+                        variant="outline"
+                        onClick={handlePrevStep}
+                        className="flex items-center gap-2"
+                        size="lg"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        Previous
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Continue Button - Shows after conversation */}
+                {ayoMessages.length > 0 && !ayoCompleted && (
+                  <div className="text-center space-y-4">
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <p className="text-sm text-yellow-800">
+                        💡 <strong>Hint:</strong> Think about what absolute value really means for both positive and negative numbers.
+                      </p>
+                    </div>
+                    <div className="flex gap-3 justify-center">
+                      <Button
+                        variant="outline"
+                        onClick={handlePrevStep}
+                        className="flex items-center gap-2"
+                        size="lg"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        Previous
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          setAyoMessages(prev => [...prev, 
+                            {type: 'user', message: "I understand now! Absolute value gives the distance from zero, so it's always positive."},
+                            {type: 'ayo', message: "Exactly right! 🎉 You've got it now. Let's move on to the quiz to test your understanding!"}
+                          ]);
+                          setTimeout(() => setAyoCompleted(true), 1000);
+                        }}
+                        className="text-white font-semibold"
+                        style={{ background: 'linear-gradient(135deg, #aa1b83 0%, #3ec7ac 100%)' }}
+                        size="lg"
+                      >
+                        I understand now!
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {ayoCompleted && (
+                  <div className="text-center">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                      <p className="text-sm text-green-800">
+                        ✅ <strong>Great work!</strong> Ayo has helped clarify your understanding. Ready for the quiz?
+                      </p>
+                    </div>
+                    <div className="flex gap-3 justify-center">
+                      <Button
+                        variant="outline"
+                        onClick={handlePrevStep}
+                        className="flex items-center gap-2"
+                        size="lg"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        Previous
+                      </Button>
+                      <Button 
+                        onClick={handleNextStep}
+                        className="text-white font-semibold"
+                        style={{ background: 'linear-gradient(135deg, #aa1b83 0%, #3ec7ac 100%)' }}
+                        size="lg"
+                      >
+                        Continue to Quiz <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step 4: Quiz */}
+            {currentStep === 4 && (
               <div className="space-y-6">
                 <div className="text-center mb-8">
                   <h3 className="text-xl font-semibold mb-2">Take the Quiz & Stack G3MS!</h3>
@@ -328,21 +527,32 @@ const LiveDrop = () => {
                 </div>
                 
                 <div className="text-center pt-4">
-                  <Button 
-                    onClick={handleNextStep}
-                    disabled={!canProceedToNextStep()}
-                    className="text-white font-semibold py-3 px-8"
-                    style={{ background: canProceedToNextStep() ? 'linear-gradient(135deg, #aa1b83 0%, #3ec7ac 100%)' : undefined }}
-                    size="lg"
-                  >
-                    Submit Answer <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
+                  <div className="flex gap-3 justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={handlePrevStep}
+                      className="flex items-center gap-2"
+                      size="lg"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      Previous
+                    </Button>
+                    <Button 
+                      onClick={handleNextStep}
+                      disabled={!canProceedToNextStep()}
+                      className="text-white font-semibold py-3 px-8"
+                      style={{ background: canProceedToNextStep() ? 'linear-gradient(135deg, #aa1b83 0%, #3ec7ac 100%)' : undefined }}
+                      size="lg"
+                    >
+                      Submit Answer <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Step 4: Win */}
-            {currentStep === 4 && (
+            {/* Step 5: Win */}
+            {currentStep === 5 && (
               <div className="space-y-6 text-center">
                 <div className="space-y-2">
                   <h3 className="text-2xl font-bold text-green-600">🎉 Congratulations!</h3>
@@ -375,18 +585,29 @@ const LiveDrop = () => {
                 </div>
 
                 {/* Claim Rewards Button */}
-                <Button 
-                  onClick={() => {
-                    const randomType = getRandomRewardType();
-                    setRewardType(randomType);
-                    setShowRewardModal(true);
-                  }}
-                  className="w-full text-white font-semibold py-4 text-lg rounded-2xl"
-                  style={{ background: 'linear-gradient(135deg, #aa1b83 0%, #3ec7ac 100%)' }}
-                  size="lg"
-                >
-                  Claim Rewards
-                </Button>
+                <div className="flex gap-3 justify-center">
+                  <Button
+                    variant="outline"
+                    onClick={handlePrevStep}
+                    className="flex items-center gap-2"
+                    size="lg"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Previous
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      const randomType = getRandomRewardType();
+                      setRewardType(randomType);
+                      setShowRewardModal(true);
+                    }}
+                    className="text-white font-semibold py-4 text-lg rounded-2xl"
+                    style={{ background: 'linear-gradient(135deg, #aa1b83 0%, #3ec7ac 100%)' }}
+                    size="lg"
+                  >
+                    Claim Rewards
+                  </Button>
+                </div>
 
                 {/* Bonus Section - Now a CTA */}
                 <Button

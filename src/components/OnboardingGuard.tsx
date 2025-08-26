@@ -35,6 +35,7 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
                        location.pathname === '/login' || 
                        location.pathname === '/signup' ||
                        location.pathname === '/' ||
+                       location.pathname === '/pricing' ||
                        location.pathname === '/dashboard' ||
                        location.pathname === '/auth/callback';
 

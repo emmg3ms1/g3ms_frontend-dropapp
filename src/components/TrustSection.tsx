@@ -3,14 +3,11 @@
 import { Award, Zap, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { BrandPartnerForm } from "./BrandPartnerForm";
-import { CreatorChallengeForm } from "./CreatorChallengeForm";
 import { HelpForm } from "./HelpForm";
+import GatedSignupForm from "./GatedSignupForm";
 import { useState } from "react";
 
 export const TrustSection = () => {
-  const [brandPartnerOpen, setBrandPartnerOpen] = useState(false);
-  const [creatorChallengeOpen, setCreatorChallengeOpen] = useState(false);
   const [helpFormOpen, setHelpFormOpen] = useState(false);
 
   console.log("TrustSection is rendering - no trusted organizations section should be here");
@@ -36,48 +33,33 @@ export const TrustSection = () => {
           <div className="bg-gradient-to-br from-g3ms-purple/5 to-pink-50 p-6 rounded-2xl">
             <h3 className="text-xl font-bold text-gray-900 mb-3">🏷️ Brands & Creators</h3>
             <p className="text-gray-700 mb-4">Launch a branded Drop with real rewards students want.</p>
-            <Dialog open={brandPartnerOpen} onOpenChange={setBrandPartnerOpen}>
-              <DialogTrigger asChild>
-                <Button 
-                  className="bg-gradient-to-r from-g3ms-purple to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-full px-6 py-2 text-sm w-full"
-                  onClick={() => window.location.href = '/drops?tab=brand'}
-                >
-                  Start a Drop
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <BrandPartnerForm onClose={() => setBrandPartnerOpen(false)} />
-              </DialogContent>
-            </Dialog>
+            <Button 
+              className="bg-gradient-to-r from-g3ms-purple to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-full px-6 py-2 text-sm w-full"
+            >
+              Start a Drop
+            </Button>
           </div>
 
           <div className="bg-gradient-to-br from-g3ms-green/5 to-emerald-50 p-6 rounded-2xl">
             <h3 className="text-xl font-bold text-gray-900 mb-3">🎥 Creator Takeovers</h3>
             <p className="text-gray-700 mb-4">Host a Drop. Reach students. Inspire real progress.</p>
-            <Dialog open={creatorChallengeOpen} onOpenChange={setCreatorChallengeOpen}>
-              <DialogTrigger asChild>
-                <Button 
-                  className="bg-gradient-to-r from-g3ms-green to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-full px-6 py-2 text-sm w-full"
-                  onClick={() => window.location.href = '/drops?tab=brand'}
-                >
-                  Get Started
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <CreatorChallengeForm onClose={() => setCreatorChallengeOpen(false)} />
-              </DialogContent>
-            </Dialog>
+            <Button 
+              className="bg-gradient-to-r from-g3ms-green to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-full px-6 py-2 text-sm w-full"
+            >
+              Get Started
+            </Button>
           </div>
 
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl">
             <h3 className="text-xl font-bold text-gray-900 mb-3">🤝 Refer & Earn</h3>
             <p className="text-gray-700 mb-4">Invite others. Unlock gift cards, cash, and VIP perks.</p>
-            <Button
-              onClick={() => window.location.href = '/drops?tab=educator'}
-              className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white rounded-full px-6 py-2 text-sm w-full"
-            >
-              Join Referral Program
-            </Button>
+            <GatedSignupForm audience="educator">
+              <Button
+                className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white rounded-full px-6 py-2 text-sm w-full"
+              >
+                Join Referral Program
+              </Button>
+            </GatedSignupForm>
           </div>
         </div>
 

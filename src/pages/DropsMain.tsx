@@ -53,7 +53,7 @@ const DropsMain = () => {
   };
 
   const handleStartDrop = (dropId: number) => {
-    setHasLiveDrop(true);
+    navigate('/drops/live');
   };
 
   const handleSubmitFeedback = (feedback: { feeling: string; comment?: string }) => {
@@ -176,16 +176,6 @@ const DropsMain = () => {
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto p-6">
-        {/* Drop Completion Flow - Show when there's an active drop */}
-        {hasLiveDrop && (
-          <div className="mb-8">
-            <DropCompletionFlow
-              isUpgraded={isUserPremium}
-              onComplete={() => handleDropComplete(1)}
-              onBrowseDrops={() => navigate("/ayo")}
-            />
-          </div>
-        )}
 
         {/* Post-Drop Banner */}
         {showCompleteBanner && (

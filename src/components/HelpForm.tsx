@@ -22,6 +22,13 @@ export const HelpForm = ({ onClose }: HelpFormProps) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
+  // Check if required fields are filled and valid
+  const isFormValid = formData.name.trim().length >= 2 && 
+                      formData.email.trim() && 
+                      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) &&
+                      formData.subject.trim().length >= 3 && 
+                      formData.message.trim().length >= 10;
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -186,6 +193,7 @@ export const HelpForm = ({ onClose }: HelpFormProps) => {
             </Button>
             <Button 
               type="submit" 
+              disabled={!isFormValid}
               className="bg-gradient-to-r from-g3ms-purple to-g3ms-green hover:from-purple-600 hover:to-green-600"
             >
               Send Message

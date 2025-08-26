@@ -29,26 +29,40 @@ interface InviteStudentsStepProps {
   dropTitle: string;
   onComplete: () => void;
   onBack: () => void;
+  userSchool?: string; // Pre-selected school from signup
 }
 
 export const InviteStudentsStep: React.FC<InviteStudentsStepProps> = ({
   dropTitle,
   onComplete,
-  onBack
+  onBack,
+  userSchool
 }) => {
-  const [inviteMethod, setInviteMethod] = useState<'email' | 'public' | 'classroom'>('email');
+  // For new users, start with classroom tab if they have a school but no existing classrooms
+  const [inviteMethod, setInviteMethod] = useState<'email' | 'public' | 'classroom'>(
+    userSchool ? 'classroom' : 'email'
+  );
   const [emailList, setEmailList] = useState<string[]>(['']);
   const [publicAccess, setPublicAccess] = useState(false);
-  const [schoolName, setSchoolName] = useState('');
+  
+  // Pre-populate school name if user has selected a school during signup
+  const [schoolName, setSchoolName] = useState(userSchool || '');
   const [classroomName, setClassroomName] = useState('');
   const [inviteMessage, setInviteMessage] = useState('');
 
-  // Mock data for existing classrooms
-  const existingClassrooms = [
+  // Mock data - for new users, this would be empty
+  const [existingClassrooms, setExistingClassrooms] = useState<Array<{
+    id: number;
+    name: string;
+    students: number;
+    school: string;
+  }>>(userSchool ? [] : [
     { id: 1, name: 'Math 101 - Period 3', students: 25, school: 'Lincoln High School' },
     { id: 2, name: 'Algebra Basics', students: 18, school: 'Lincoln High School' },
     { id: 3, name: 'Advanced Math', students: 22, school: 'Lincoln High School' }
-  ];
+  ]);
+
+  const isNewUser = existingClassrooms.length === 0;
 
   const handleAddEmail = () => {
     setEmailList([...emailList, '']);
@@ -79,8 +93,29 @@ export const InviteStudentsStep: React.FC<InviteStudentsStepProps> = ({
 
   const handleCreateClassroom = () => {
     if (schoolName && classroomName) {
-      toast.success(`Created classroom "${classroomName}" at ${schoolName}!`);
+      // Create new classroom object
+      const newClassroom = {
+        id: existingClassrooms.length + 1,
+        name: classroomName,
+        students: 0, // New classroom starts with 0 students
+        school: schoolName
+      };
+      
+      // Add to existing classrooms list
+      setExistingClassrooms([...existingClassrooms, newClassroom]);
+      
+      // Clear classroom name but keep school name if it was pre-populated
+      if (!userSchool) {
+        setSchoolName('');
+      }
+      setClassroomName('');
+      
+      toast.success(`Created classroom "${classroomName}" at ${schoolName}! You can now assign students to it.`);
     }
+  };
+
+  const handleAssignToClassroom = (classroom: { id: number; name: string; school: string; students: number }) => {
+    toast.success(`Drop "${dropTitle}" assigned to ${classroom.name}! Students in this classroom will now have access.`);
   };
 
   return (
@@ -261,58 +296,90 @@ export const InviteStudentsStep: React.FC<InviteStudentsStepProps> = ({
 
         {/* Classroom Tab */}
         <TabsContent value="classroom" className="space-y-6">
-          {/* Existing Classrooms */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <School className="h-5 w-5 text-g3ms-purple" />
-                Assign to Existing Classroom
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {existingClassrooms.map((classroom) => (
-                  <div
-                    key={classroom.id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-g3ms-purple/10 rounded-lg flex items-center justify-center">
-                        <Building className="h-5 w-5 text-g3ms-purple" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold">{classroom.name}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {classroom.students} students • {classroom.school}
-                        </p>
-                      </div>
-                    </div>
-                    <Button size="sm" variant="outline">
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Assign
-                    </Button>
+          {/* New User Welcome Message */}
+          {isNewUser && (
+            <Card className="border-2 border-g3ms-green/20 bg-gradient-to-r from-g3ms-green/5 to-g3ms-blue/5">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="h-12 w-12 bg-g3ms-green/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <School className="h-6 w-6 text-g3ms-green" />
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  <div>
+                    <h3 className="text-lg font-semibold text-g3ms-green mb-2">
+                      Welcome! Let's create your first classroom
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      Since you're new to G3MS, you'll need to create a classroom first. 
+                      {userSchool && ` We've already filled in ${userSchool} as your school.`} 
+                      Just add your classroom name and you'll be ready to invite students!
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <Separator className="w-full" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or</span>
-            </div>
-          </div>
+          {/* Existing Classrooms - Only show if there are any */}
+          {!isNewUser && (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <School className="h-5 w-5 text-g3ms-purple" />
+                    Assign to Existing Classroom
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {existingClassrooms.map((classroom) => (
+                      <div
+                        key={classroom.id}
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 bg-g3ms-purple/10 rounded-lg flex items-center justify-center">
+                            <Building className="h-5 w-5 text-g3ms-purple" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold">{classroom.name}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {classroom.students} students • {classroom.school}
+                            </p>
+                          </div>
+                        </div>
+                        <Button size="sm" variant="outline" onClick={() => handleAssignToClassroom(classroom)}>
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Assign
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or</span>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Create New Classroom */}
-          <Card>
+          <Card className={isNewUser ? "border-2 border-g3ms-purple/20" : ""}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Plus className="h-5 w-5 text-g3ms-green" />
-                Create New Classroom
+                {isNewUser ? "Create Your First Classroom" : "Create New Classroom"}
               </CardTitle>
+              {isNewUser && (
+                <p className="text-sm text-muted-foreground">
+                  After creating your classroom, you'll be able to invite students to join this drop.
+                </p>
+              )}
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -323,7 +390,14 @@ export const InviteStudentsStep: React.FC<InviteStudentsStepProps> = ({
                     placeholder="Lincoln High School"
                     value={schoolName}
                     onChange={(e) => setSchoolName(e.target.value)}
+                    disabled={!!userSchool}
+                    className={userSchool ? "bg-muted" : ""}
                   />
+                  {userSchool && (
+                    <p className="text-xs text-muted-foreground">
+                      School pre-selected from your profile
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="classroom-name">Classroom Name</Label>
@@ -333,17 +407,21 @@ export const InviteStudentsStep: React.FC<InviteStudentsStepProps> = ({
                     value={classroomName}
                     onChange={(e) => setClassroomName(e.target.value)}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    e.g., "Math 101 - Period 3", "5th Grade Science", "AP History"
+                  </p>
                 </div>
               </div>
 
-              <div className="flex justify-end">
+              <div className={`flex ${isNewUser ? 'justify-center' : 'justify-end'}`}>
                 <Button
                   onClick={handleCreateClassroom}
                   disabled={!schoolName || !classroomName}
                   className="bg-g3ms-green hover:bg-g3ms-green/90"
+                  size={isNewUser ? "lg" : "default"}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Create Classroom
+                  {isNewUser ? "Create My First Classroom" : "Create Classroom"}
                 </Button>
               </div>
             </CardContent>

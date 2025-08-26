@@ -56,10 +56,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     setAuthProcessing(true);
     try {
+      // Check if this is a mobile OAuth callback
+      const isMobileCallback = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const mobileRegex = /Mobile|Android|iPhone|iPad/;
+        return urlParams.has('mobile') || hashParams.has('mobile') || 
+               document.referrer.includes('g3ms-dev://') ||
+               mobileRegex.exec(navigator.userAgent) ||
+               sessionStorage.getItem('mobile_oauth_callback') === 'true';
+      };
+
+      // Check if this user came from GatedSignupForm
+      const isGatedSignupFlow = sessionStorage.getItem('gated_signup_flow') === 'true';
+
       // Security: Remove sensitive user data from logs
       if (import.meta.env.MODE === 'development') {
         console.log('🎯 Starting post-auth flow for user:', userData.email);
         console.log('🎯 Is from signup flow:', isFromSignup);
+        console.log('🎯 Is gated signup flow:', isGatedSignupFlow);
+        console.log('📱 Is mobile callback:', isMobileCallback());
       }
       
       // Get current user profile and onboarding status
@@ -82,17 +98,40 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       // Handle onboarding flow based on state
       if (onboardingStatus.state === 'READY') {
-        // User is fully onboarded, redirect based on role
-        if (isFromSignup) {
-          // For new signups, always show welcome/dashboard first
+        // User is fully onboarded - clean up gated signup flag
+        if (isGatedSignupFlow) {
+          sessionStorage.removeItem('gated_signup_flow');
+        }
+        
+        if (isMobileCallback()) {
+          // Redirect back to mobile app with tokens
+          console.log('📱 User ready, redirecting to mobile app');
+          redirectToMobileApp();
+          return;
+        } else if (isFromSignup) {
+          // For web new signups, show dashboard
           window.location.href = '/dashboard';
         } else {
-          // For existing users, go to role-specific dashboard
+          // For existing web users, go to role-specific dashboard
           redirectToRoleDashboard(userProfile.role);
         }
       } else {
         // User needs to complete onboarding
-        redirectToOnboardingStep(onboardingStatus.state);
+        if (isMobileCallback()) {
+          // Store that this is a mobile callback for later redirect
+          sessionStorage.setItem('mobile_oauth_callback', 'true');
+        }
+        
+        // If this came from GatedSignupForm and user is not fully onboarded,
+        // store the onboarding state for the popup flow to continue from
+        if (isGatedSignupFlow) {
+          sessionStorage.setItem('signup_onboarding_state', onboardingStatus.state);
+          // Don't redirect - let the SignupFlow popup handle it
+          return;
+        } else {
+          // Regular flow - redirect to individual onboarding pages
+          redirectToOnboardingStep(onboardingStatus.state);
+        }
       }
       
     } catch (error) {
@@ -101,6 +140,48 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       window.location.href = '/dashboard';
     } finally {
       setAuthProcessing(false);
+    }
+  };
+
+  const redirectToMobileApp = () => {
+    const token = TokenManager.getToken();
+    const refreshToken = TokenManager.getRefreshToken();
+    
+    if (token && refreshToken) {
+      const deepLinkUrl = `g3ms-dev://auth?access_token=${encodeURIComponent(token)}&refresh_token=${encodeURIComponent(refreshToken)}`;
+      
+      console.log('🚀 Redirecting completed user back to mobile app');
+      
+      // Clear mobile callback flag
+      sessionStorage.removeItem('mobile_oauth_callback');
+      
+      // Multiple redirect methods for better compatibility
+      window.location.href = deepLinkUrl;
+      
+      // Fallback methods
+      setTimeout(() => {
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = deepLinkUrl;
+        document.body.appendChild(iframe);
+        
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+        }, 1000);
+      }, 500);
+      
+      setTimeout(() => {
+        const link = document.createElement('a');
+        link.href = deepLinkUrl;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        if (document.body.contains(link)) {
+          document.body.removeChild(link);
+        }
+      }, 1000);
     }
   };
   
@@ -137,10 +218,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         window.location.href = '/drops/main';
         break;
       case 'educator':
-        window.location.href = '/drops/main';
+        window.location.href = '/educator/dashboard';
         break;
       case 'brand':
-        window.location.href = '/profile';
+        window.location.href = '/brands/dashboard';
         break;
       default:
         window.location.href = '/drops/main';

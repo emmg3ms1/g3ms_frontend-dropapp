@@ -19,6 +19,13 @@ export const CreatorChallengeForm = ({ onClose }: { onClose: () => void }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
+  // Check if required fields are filled
+  const isFormValid = formData.creatorName.trim() && 
+                      formData.socialHandle.trim() && 
+                      formData.email.trim() && 
+                      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) &&
+                      formData.message.trim();
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -190,7 +197,7 @@ ${sanitizedData.message}
           <div className="flex gap-3 pt-4">
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !isFormValid}
               className="flex-1 bg-gradient-to-r from-g3ms-green to-emerald-500 hover:from-green-600 hover:to-emerald-600"
             >
               {isSubmitting ? "Opening Email..." : "Submit Challenge Idea"}

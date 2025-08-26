@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
 import * as z from 'zod';
 import { format } from 'date-fns';
 import { CalendarIcon, Upload, Plus, Check, ChevronDown, Search, Video, Play, Loader2, X } from 'lucide-react';
@@ -38,8 +38,17 @@ const formSchema = z.object({
   scheduleTime: z.string().min(1, 'Schedule time is required'),
   videoContent: z.string().min(1, 'Video content is required'),
   template: z.string().min(1, 'Template is required'),
+  assignmentType: z.string().optional(),
   targetSchools: z.array(z.string()).optional(),
   targetGrades: z.array(z.string()).optional(),
+  // Brand Campaign Info
+  brandName: z.string().min(1, 'Brand/Organization name is required'),
+  campaignGoal: z.enum(['brand_awareness', 'product_education', 'engagement', 'lead_generation', 'community_building'], {
+    required_error: 'Please select a campaign goal',
+  }),
+  budgetRange: z.enum(['under_5k', '5k_10k', '10k_25k', '25k_50k', '50k_plus'], {
+    required_error: 'Please select a budget range',
+  }),
   brand: z.string().optional(),
   rewardType: z.enum(['tokens', 'item'], {
     required_error: 'Please select a reward type',
@@ -50,7 +59,7 @@ const formSchema = z.object({
   eligibilityCriteria: z.string().min(1, 'Eligibility criteria is required'),
   subject: z.string().optional(),
   rtiTier: z.string().optional(),
-  learningGoal: z.string().optional(),
+  learningGoal: z.string().min(1, 'Educational theme/standards/learning objectives are required'),
 }).refine((data) => {
   if (data.rewardType === 'tokens' && !data.g3msAmount) {
     return false;
@@ -110,10 +119,7 @@ export const CreateDropForm: React.FC<CreateDropFormProps> = ({ onDropCreated })
   } = useQuery({
     queryKey: ['drop-templates', templatePage],
     queryFn: () => apiService.getDropTemplates(),
-    retry: false,
-    onError: (error) => {
-      console.warn('Failed to fetch templates, using fallback:', error);
-    }
+    retry: false
   });
 
   // Fetch videos with pagination
@@ -124,7 +130,7 @@ export const CreateDropForm: React.FC<CreateDropFormProps> = ({ onDropCreated })
   } = useQuery({
     queryKey: ['drop-videos', videoPage],
     queryFn: () => apiService.getDropVideos(),
-    keepPreviousData: true
+    placeholderData: keepPreviousData
   });
 
   // Fetch subjects (topics)
@@ -139,14 +145,11 @@ export const CreateDropForm: React.FC<CreateDropFormProps> = ({ onDropCreated })
   // Fetch schools with search and pagination
   const { 
     data: schoolsResponse, 
-    isLoading: isLoadingSchools,
-    fetchNextPage: fetchNextSchoolPage,
-    hasNextPage: hasNextSchoolPage,
-    isFetchingNextPage: isFetchingNextSchoolPage
+    isLoading: isLoadingSchools
   } = useQuery({
     queryKey: ['schools', schoolSearchTerm, schoolPage],
     queryFn: () => apiService.getSchools(schoolPage, 50, schoolSearchTerm),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
     enabled: isSchoolComboboxOpen || schoolSearchTerm.length > 0
   });
 
@@ -160,11 +163,11 @@ export const CreateDropForm: React.FC<CreateDropFormProps> = ({ onDropCreated })
   });
 
   // Process fetched data with fallbacks
-  const templates = templatesError ? mockTemplates : (templatesResponse?.data || []).sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
-  const videos = videosResponse?.data || [];
-  const subjects = subjectsResponse?.data || [];
-  const schools = schoolsResponse?.data || [];
-  const grades = gradesResponse?.data || [];
+  const templates = templatesError ? mockTemplates : ((templatesResponse as any)?.data || []).sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+  const videos = (videosResponse as any)?.data || [];
+  const subjects = (subjectsResponse as any)?.data || [];
+  const schools = (schoolsResponse as any)?.data || [];
+  const grades = (gradesResponse as any)?.data || [];
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -175,8 +178,12 @@ export const CreateDropForm: React.FC<CreateDropFormProps> = ({ onDropCreated })
       scheduleTime: '',
       videoContent: '',
       template: '',
+      assignmentType: '',
       targetSchools: [],
       targetGrades: [],
+      brandName: '',
+      campaignGoal: undefined,
+      budgetRange: undefined,
       brand: '',
       rewardType: 'tokens',
       numberOfWinners: 1,
@@ -194,7 +201,7 @@ export const CreateDropForm: React.FC<CreateDropFormProps> = ({ onDropCreated })
       
       if (dropData.dropType) {
         updates.template = dropData.dropType;
-        updates.dropType = dropData.dropType;
+        updates.dropType = dropData.dropType as FormData['dropType'];
       }
       
       if (dropData.grade) {
@@ -228,27 +235,30 @@ export const CreateDropForm: React.FC<CreateDropFormProps> = ({ onDropCreated })
 
   const onSubmit = async (data: FormData) => {
     try {
-      // Map form data to API format
-      const dropPayload = {
-        title: data.title,
-        dropType: data.dropType,
-        topicId: data.subject,
-        rtiTier: data.rtiTier?.toUpperCase(),
-        learningGoal: data.learningGoal,
-        scheduledAt: new Date(`${format(data.scheduleDate, 'yyyy-MM-dd')}T${data.scheduleTime}:00.000Z`).toISOString(),
-        videoId: data.videoContent,
-        templateId: data.template,
-        schoolIds: data.targetSchools || [],
-        gradeIds: data.targetGrades || [],
-        brandId: data.brand || undefined,
-        reward: {
-          rewardType: data.rewardType === 'tokens' ? 'G3MS' : 'BRAND_REWARD',
-          g3msAmount: data.rewardType === 'tokens' ? data.g3msAmount : undefined,
-          rewardItemId: data.rewardType === 'item' ? data.rewardItem : undefined,
-          winnersCount: data.numberOfWinners,
-          eligibilityText: data.eligibilityCriteria
-        }
-      };
+        // Map form data to API format
+        const dropPayload = {
+          title: data.title,
+          dropType: data.dropType,
+          topicId: data.subject,
+          rtiTier: data.rtiTier?.toUpperCase(),
+          learningGoal: data.learningGoal,
+          scheduledAt: new Date(`${format(data.scheduleDate, 'yyyy-MM-dd')}T${data.scheduleTime}:00.000Z`).toISOString(),
+          videoId: data.videoContent,
+          templateId: data.template,
+          schoolIds: data.targetSchools || [],
+          gradeIds: data.targetGrades || [],
+          brandName: data.brandName,
+          campaignGoal: data.campaignGoal,
+          budgetRange: data.budgetRange,
+          // brandId: data.brand || undefined,
+          reward: {
+            rewardType: data.rewardType === 'tokens' ? 'G3MS' : 'BRAND_REWARD',
+            g3msAmount: data.rewardType === 'tokens' ? data.g3msAmount : undefined,
+            rewardItemId: data.rewardType === 'item' ? data.rewardItem : undefined,
+            winnersCount: data.numberOfWinners,
+            eligibilityText: data.eligibilityCriteria
+          }
+        };
 
       const response = await apiService.createDrop(dropPayload);
       
@@ -320,9 +330,9 @@ export const CreateDropForm: React.FC<CreateDropFormProps> = ({ onDropCreated })
             name="title"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Title</FormLabel>
+                <FormLabel>Campaign Title</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter drop title" {...field} />
+                  <Input placeholder="Enter campaign title" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -403,7 +413,7 @@ export const CreateDropForm: React.FC<CreateDropFormProps> = ({ onDropCreated })
               control={form.control}
               name="scheduleTime"
               render={({ field }) => (
-                <FormItem>
+                <FormItem  className="flex flex-col">
                   <FormLabel>Schedule Time</FormLabel>
                   <FormControl>
                     <Input type="time" {...field} />
@@ -470,7 +480,7 @@ export const CreateDropForm: React.FC<CreateDropFormProps> = ({ onDropCreated })
                                   </SelectItem>
                                 );
                               })}
-                              {videosResponse?.meta?.totalPages > videoPage && (
+                              {(videosResponse as any)?.meta?.totalPages > videoPage && (
                                 <div className="p-2 border-t">
                                   <Button
                                     type="button"
@@ -632,6 +642,108 @@ export const CreateDropForm: React.FC<CreateDropFormProps> = ({ onDropCreated })
             )}
           />
 
+          {/* Brand Campaign Info Section */}
+          <div className="space-y-6 p-4 border border-border rounded-lg bg-muted/30">
+            <div className="text-lg font-semibold text-center">Campaign Info</div>
+            
+            {/* Brand/Organization Name and Campaign Goal */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="brandName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Brand/Org Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter brand or organization name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="campaignGoal"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Campaign Goal</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select campaign goal" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="brand_awareness">Brand Awareness</SelectItem>
+                        <SelectItem value="product_education">Product Education</SelectItem>
+                        <SelectItem value="engagement">Engagement</SelectItem>
+                        <SelectItem value="lead_generation">Lead Generation</SelectItem>
+                        <SelectItem value="community_building">Community Building</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Reward Type and Budget Range */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="rewardType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reward Type</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select reward" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="tokens">G3MS Tokens</SelectItem>
+                        <SelectItem value="item">Brand Reward Item</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="budgetRange"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Budget Range</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="What's your budget for this campaign?" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="under_5k">Under $5,000</SelectItem>
+                        <SelectItem value="5k_10k">$5,000 - $10,000</SelectItem>
+                        <SelectItem value="10k_25k">$10,000 - $25,000</SelectItem>
+                        <SelectItem value="25k_50k">$25,000 - $50,000</SelectItem>
+                        <SelectItem value="50k_plus">$50,000+</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="text-xs text-center text-muted-foreground">
+              Sign up fee + per campaign pricing applies for brands.<br />
+              Want to sponsor with creators? We'll match you.
+            </div>
+          </div>
+
           {/* Target Schools - Multi-Select Combobox with Search */}
           <div>
             <Label className="text-sm font-medium">Target Schools (Optional)</Label>
@@ -686,7 +798,7 @@ export const CreateDropForm: React.FC<CreateDropFormProps> = ({ onDropCreated })
                               </div>
                             </CommandItem>
                           ))}
-                          {schoolsResponse?.meta?.totalPages > schoolPage && (
+                          {(schoolsResponse as any)?.meta?.totalPages > schoolPage && (
                             <div className="p-2 border-t">
                               <Button
                                 type="button"
@@ -808,34 +920,6 @@ export const CreateDropForm: React.FC<CreateDropFormProps> = ({ onDropCreated })
             )}
           />
 
-          {/* Reward Type */}
-          <FormField
-            control={form.control}
-            name="rewardType"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel>Reward Type</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    className="flex flex-col space-y-1"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="tokens" id="tokens" />
-                      <Label htmlFor="tokens">G3MS Tokens</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="item" id="item" />
-                      <Label htmlFor="item">Brand Reward Item</Label>
-                    </div>
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
           {/* Conditional Fields based on Reward Type */}
           {rewardType === 'tokens' && (
             <FormField
@@ -929,8 +1013,11 @@ export const CreateDropForm: React.FC<CreateDropFormProps> = ({ onDropCreated })
             <Button type="button" variant="outline">
               Save as Draft
             </Button>
-            <Button type="submit">
-              Create Drop
+            <Button 
+              type="submit"
+              disabled={!form.formState.isValid || form.formState.isSubmitting}
+            >
+              {form.formState.isSubmitting ? 'Creating Drop...' : 'Create Drop'}
             </Button>
           </div>
         </form>

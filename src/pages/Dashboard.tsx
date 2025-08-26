@@ -16,10 +16,10 @@ const Dashboard = () => {
         navigate('/drops/main');
         break;
       case 'educator':
-        navigate('/drops/main');
+        navigate('/educator/dashboard');
         break;
       case 'brand':
-        navigate('/profile');
+        navigate('/brands/dashboard');
         break;
       default:
         navigate('/drops/main');
@@ -40,7 +40,7 @@ const Dashboard = () => {
             Welcome, {user?.email}! You're all set to start using G3MS.
           </p>
           <Button onClick={handleRoleRedirect} className="w-full">
-            Continue to {user?.role === 'brand' ? 'Profile' : 'Drops'}
+            Continue to {user?.role === 'brand' ? 'Brand Dashboard' : user?.role === 'educator' ? 'Educator Dashboard' : 'Drops'}
           </Button>
         </CardContent>
       </Card>

@@ -26,28 +26,28 @@ const RewardClaimModal: React.FC<RewardClaimModalProps> = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md p-0 gap-0">
-        <div className="relative bg-white rounded-lg">
+      <DialogContent className="sm:max-w-md p-0 gap-0 bg-white">
+        <div className="relative bg-white rounded-lg overflow-hidden">
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center"
+            className="absolute top-4 right-4 z-10 w-8 h-8 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-200"
           >
             <X className="w-4 h-4 text-gray-600" />
           </button>
 
-          <div className="p-6 space-y-4">
-            {/* Reward Image/Icon */}
-            <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
+          <div className="p-6 space-y-6">
+            {/* Reward Image/Icon - Prominent Display */}
+            <div className="rounded-xl bg-black flex items-center justify-center p-8 min-h-[200px]">
               {rewardData.image ? (
                 <img 
                   src={rewardData.image} 
                   alt={rewardData.title}
-                  className="w-full max-w-sm mx-auto rounded-lg"
+                  className="max-w-full max-h-48 object-contain"
                 />
               ) : (
-                <div className="w-full h-32 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-2xl font-bold">
+                <div className="w-40 h-40 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-5xl">
                     {rewardType === 'tokens' ? '💎' : rewardType === 'event' ? '🎟️' : '🎁'}
                   </span>
                 </div>
@@ -61,30 +61,30 @@ const RewardClaimModal: React.FC<RewardClaimModalProps> = ({
 
             {/* Website Link */}
             {rewardData.website && (
-              <p className="text-center text-blue-600 text-sm">
+              <p className="text-center text-cyan-500 text-sm font-medium">
                 {rewardData.website}
               </p>
             )}
 
             {/* Main Message */}
-            <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-gray-900">
+            <div className="text-center space-y-3">
+              <h3 className="text-lg font-semibold text-gray-900">
                 {rewardData.message}
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 leading-relaxed">
                 {rewardData.details}
               </p>
             </div>
 
             {/* Contact Info */}
             {rewardData.contactInfo && (
-              <div className="bg-pink-50 rounded-lg p-3">
-                <p className="text-sm font-medium text-pink-700 mb-1">
+              <div className="bg-pink-50 rounded-lg p-4 border border-pink-200">
+                <p className="text-sm font-medium text-pink-700 mb-2">
                   Your {rewardType === 'giftcard' ? 'eGift card' : 'reward'} will be sent to:
                 </p>
-                <p className="text-sm text-gray-800">
+                <div className="text-sm text-gray-800 whitespace-pre-line">
                   {rewardData.contactInfo}
-                </p>
+                </div>
               </div>
             )}
 
@@ -94,14 +94,14 @@ const RewardClaimModal: React.FC<RewardClaimModalProps> = ({
                 <div className="text-2xl font-bold text-green-600">
                   +{rewardData.amount} Tokens
                 </div>
-                <p className="text-sm text-green-700">Added to your account!</p>
+                <p className="text-sm text-green-700 mt-1">Added to your account!</p>
               </div>
             )}
 
             {/* Done Button */}
             <Button
               onClick={onClose}
-              className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-semibold py-3 rounded-xl"
+              className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-semibold py-3 rounded-xl h-12"
             >
               Done
             </Button>

@@ -63,6 +63,41 @@ const OnboardingPhone = () => {
       
       if (response.state === 'READY') {
         toast.success('Phone verified successfully!');
+        
+        // Check if this was a mobile OAuth callback
+        const isMobileCallback = sessionStorage.getItem('mobile_oauth_callback') === 'true';
+        
+        if (isMobileCallback) {
+          // Redirect back to mobile app with tokens
+          const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+          const refreshToken = localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
+          
+          if (token && refreshToken) {
+            const deepLinkUrl = `g3ms-dev://auth?access_token=${encodeURIComponent(token)}&refresh_token=${encodeURIComponent(refreshToken)}`;
+            
+            console.log('📱 Onboarding complete, redirecting to mobile app');
+            sessionStorage.removeItem('mobile_oauth_callback');
+            
+            // Try multiple redirect methods
+            window.location.href = deepLinkUrl;
+            
+            setTimeout(() => {
+              const iframe = document.createElement('iframe');
+              iframe.style.display = 'none';
+              iframe.src = deepLinkUrl;
+              document.body.appendChild(iframe);
+              
+              setTimeout(() => {
+                if (document.body.contains(iframe)) {
+                  document.body.removeChild(iframe);
+                }
+              }, 1000);
+            }, 500);
+            
+            return;
+          }
+        }
+        
         navigate('/dashboard');
       } else {
         toast.error('Unexpected onboarding state. Please try again.');
