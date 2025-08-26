@@ -24,6 +24,7 @@ import { MonitorProgressStep } from "@/components/MonitorProgressStep";
 import { CelebrateSuccessStep } from "@/components/CelebrateSuccessStep";
 import { useEducatorDropStore } from "@/stores/educatorDropStore";
 import { apiService } from "@/services/api";
+import { getMuxThumbnailUrl, getPlaybackIdFromVideo } from "@/utils/mux";
 import { toast } from "sonner";
 import { DropCompletionFlow } from "@/components/DropCompletionFlow";
 import {
@@ -590,6 +591,20 @@ const EducatorDashboard = () => {
                       key={drop.id}
                       className="border-l-4 border-l-g3ms-blue/30 hover:shadow-md transition-shadow"
                     >
+                      {/* Video Preview Image */}
+                      {drop.video?.playbackId && (
+                        <div className="aspect-video w-full h-32 overflow-hidden rounded-t-lg">
+                          <img
+                            src={getMuxThumbnailUrl(drop.video.playbackId, 'jpg', { width: 400, height: 225 })}
+                            alt={`${drop.title} preview`}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                            onError={(e) => {
+                              // Fallback to a placeholder if thumbnail fails to load
+                              e.currentTarget.src = '/placeholder.svg';
+                            }}
+                          />
+                        </div>
+                      )}
                       <CardContent className="p-4">
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
                           {/* Drop Info */}
@@ -868,7 +883,20 @@ const EducatorDashboard = () => {
                         key={drop.id}
                         className="border rounded-lg p-3 hover:bg-muted/30 transition-colors"
                       >
-                        <div className="flex items-start justify-between">
+                        <div className="flex items-start justify-between gap-3">
+                          {/* Small video preview for sidebar */}
+                          {drop.video?.playbackId && (
+                            <div className="w-16 h-9 flex-shrink-0 overflow-hidden rounded border">
+                              <img
+                                src={getMuxThumbnailUrl(drop.video.playbackId, 'jpg', { width: 120, height: 68 })}
+                                alt={`${drop.title} preview`}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.src = '/placeholder.svg';
+                                }}
+                              />
+                            </div>
+                          )}
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold text-sm truncate">
                               {drop.title}
